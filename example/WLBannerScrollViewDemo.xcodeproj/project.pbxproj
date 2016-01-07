@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		612D64E31C3E75F000BA696F /* failureImage.png in Resources */ = {isa = PBXBuildFile; fileRef = 612D64E21C3E75F000BA696F /* failureImage.png */; };
 		613D6E5E1C3A4CAA006F5C4D /* placeholderImage.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 613D6E5D1C3A4CAA006F5C4D /* placeholderImage.jpg */; };
 		61D07DC31C35024400E4A7B5 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 61D07DC21C35024400E4A7B5 /* main.m */; };
 		61D07DC61C35024400E4A7B5 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 61D07DC51C35024400E4A7B5 /* AppDelegate.m */; };
@@ -21,6 +22,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		612D64E21C3E75F000BA696F /* failureImage.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = failureImage.png; sourceTree = "<group>"; };
 		613D6E5D1C3A4CAA006F5C4D /* placeholderImage.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = placeholderImage.jpg; sourceTree = "<group>"; };
 		61D07DBE1C35024400E4A7B5 /* WLBannerScrollViewDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WLBannerScrollViewDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		61D07DC21C35024400E4A7B5 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
@@ -77,6 +79,7 @@
 				61D07DE01C353F2100E4A7B5 /* 2.jpg */,
 				61D07DE11C353F2100E4A7B5 /* 1.jpg */,
 				613D6E5D1C3A4CAA006F5C4D /* placeholderImage.jpg */,
+				612D64E21C3E75F000BA696F /* failureImage.png */,
 				61D07DD81C35026200E4A7B5 /* WLBannerScrollView.h */,
 				61D07DD91C35026200E4A7B5 /* WLBannerScrollView.m */,
 				61D07DCA1C35024400E4A7B5 /* Main.storyboard */,
@@ -159,6 +162,7 @@
 				61D07DE21C353F2100E4A7B5 /* 0.jpg in Resources */,
 				61D07DCE1C35024400E4A7B5 /* Assets.xcassets in Resources */,
 				61D07DCC1C35024400E4A7B5 /* Main.storyboard in Resources */,
+				612D64E31C3E75F000BA696F /* failureImage.png in Resources */,
 				61D07DE41C353F2100E4A7B5 /* 1.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
