@@ -10,6 +10,7 @@
 @interface WLBannerScrollView ()<UIScrollViewDelegate>
 
 @property (nonatomic, strong) UIImage *placeholderImage;
+@property (nonatomic, strong) UIImage *failureImage;
 
 @property (nonatomic, strong) NSArray *URLStrings;
 @property (nonatomic, strong) UIScrollView *scrollView;
@@ -23,17 +24,20 @@
 
 @implementation WLBannerScrollView
 
-+ (instancetype)viewWithFrame:(CGRect)frame URLStrings:(NSArray *)urlStrings placeholderImage:(UIImage *)placeholderImage{
-    return [[WLBannerScrollView alloc] initWithFrame:frame URLStrings:urlStrings placeholderImage:placeholderImage];
++ (instancetype)viewWithFrame:(CGRect)frame URLStrings:(NSArray *)urlStrings placeholderImage:(UIImage *)placeholderImage failureImage:(UIImage *)failureImage{
+    return [[WLBannerScrollView alloc] initWithFrame:frame URLStrings:urlStrings placeholderImage:placeholderImage failureImage:failureImage];
 }
 
-- (instancetype)initWithFrame:(CGRect)frame URLStrings:(NSArray *)urlStrings placeholderImage:(UIImage *)placeholderImage
+- (instancetype)initWithFrame:(CGRect)frame URLStrings:(NSArray *)urlStrings placeholderImage:(UIImage *)placeholderImage failureImage:(UIImage *)failureImage
 {
     self = [super initWithFrame:frame];
     if (self) {
         
         if (placeholderImage && [placeholderImage isKindOfClass:[UIImage class]]) {
             self.placeholderImage = placeholderImage;
+        }
+        if (failureImage && [failureImage isKindOfClass:[UIImage class]]) {
+            self.failureImage = failureImage;
         }
         
         [self initViewWithURLStrings:urlStrings];
@@ -73,10 +77,8 @@
     self.showPageControl = YES;
     self.showIndicatorView = YES;
     
-    if (self.placeholderImage != nil) {
-        for (int i = 0; i<self.URLStrings.count; i++) {
-            [self addImageViewWithImage:self.placeholderImage page:i];
-        }
+    for (int i = 0; i<self.URLStrings.count; i++) {
+        [self addImageViewWithImage:self.placeholderImage page:i];
     }
     
     [self requestImages];
@@ -136,7 +138,9 @@
         indicatorView.backgroundColor = [UIColor clearColor];
         indicatorView.bounds = CGRectMake(0, 0, 50, 50);
         indicatorView.center = imageView.center;
+        indicatorView.activityIndicatorViewStyle = UIActivityIndicatorViewStyleWhite;
         [indicatorView startAnimating];
+        indicatorView.tag = i;
         [self.scrollView addSubview:indicatorView];
     }
     
@@ -146,28 +150,64 @@
         
         NSURL *url = [NSURL URLWithString:urlString];
         NSURLSession *session = [NSURLSession sessionWithConfiguration:configuration];
-        NSURLSessionDataTask *dataTask = [session dataTaskWithURL:url completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        self.URLSession = session;
+        NSURLSessionDataTask *dataTask = [self.URLSession dataTaskWithURL:url completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+            
+            NSString *urlString = response.URL.absoluteString;
+            NSUInteger page = [_URLStrings indexOfObject:urlString];
+            
+            dispatch_async(dispatch_get_main_queue(), ^{
+                for (UIActivityIndicatorView *subView in _scrollView.subviews) {
+                    if ([subView isMemberOfClass:[UIActivityIndicatorView class]] && subView.tag == page) {
+                        [subView startAnimating];
+                        [subView removeFromSuperview];
+                    }
+                }
+            });
             
             if (!error) {
                 
-                NSString *urlString = response.URL.absoluteString;
-                NSUInteger page = [_URLStrings indexOfObject:urlString];
 #ifdef DEBUG
                 NSLog(@"------request page %d finished", (int)page);
 #endif
                 
                 if (data.length>0) {
                     __block UIImage *image = [UIImage imageWithData:data];
-                    [self.images addObject:image];
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        [self addImageViewWithImage:image page:(int)page];
-                    });
+                    
+                    if (image == nil) {
+                        if (self.failureImage != nil) {
+                            dispatch_async(dispatch_get_main_queue(), ^{
+                                [self addImageViewWithImage:self.failureImage page:(int)page];
+                            });
+                        }else{
+                            dispatch_async(dispatch_get_main_queue(), ^{
+                                [self addImageViewWithImage:self.placeholderImage page:(int)page];
+                            });
+                        }
+                    }else{
+                        [self.images addObject:image];
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            [self addImageViewWithImage:image page:(int)page];
+                        });
+                    }
+                    
                 }
                 
             }else {
 #ifdef DEBUG
                 NSLog(@"error: %@", error.localizedDescription);
 #endif
+                
+                if (self.failureImage != nil) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [self addImageViewWithImage:self.failureImage page:(int)page];
+                    });
+                }else{
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [self addImageViewWithImage:self.placeholderImage page:(int)page];
+                    });
+                }
+                
             }
             
         }];
@@ -184,9 +224,11 @@
     CGRect imageViewFrame = CGRectMake(scrollView_W*page, 0, scrollView_W, scrollView_H);
     UIImageView *imageView = [[UIImageView alloc] initWithFrame:imageViewFrame];
     imageView.backgroundColor = [UIColor clearColor];
-    imageView.image = image;
+    if (image != nil) {
+        imageView.image = image;
+        
+    }
     [self.scrollView addSubview:imageView];
-    
 }
 
 -(void)setShowPageControl:(BOOL)showPageControl{

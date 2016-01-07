@@ -17,7 +17,7 @@ typedef void(^scrollBlock)(UIImage *image, NSInteger currentPage);
 @property (nonatomic, assign) BOOL showIndicatorView;// 是否显示菊花缓冲控件 indicatorView, 默认显示
 
 //加载网络图片的初始化方法
-+ (instancetype)viewWithFrame:(CGRect)frame URLStrings:(NSArray *)urlStrings placeholderImage:(UIImage *)placeholderImage;
++ (instancetype)viewWithFrame:(CGRect)frame URLStrings:(NSArray *)urlStrings placeholderImage:(UIImage *)placeholderImage failureImage:(UIImage *)failureImage;
 
 //加载本地图片的初始化方法
 + (instancetype)viewWithFrame:(CGRect)frame images:(NSArray *)images;
