@@ -19,6 +19,6 @@ bannerView 封装,可加载网络图片和本地图片,加载网络图片不需�
         NSLog(@"------currentPage: %ld", (long)currentPage);
     };
 
-示例图片:
+效果图:
 
 ![image](https://raw.githubusercontent.com/GitHubWanglei/WLBannerScrollView/master/image.png)
