@@ -1,5 +1,5 @@
 # WLBannerScrollView
-bannerView 封装,可加载网络图片和本地图片,加载网络图片不需依赖第三方sdk,采用NSURLSession进行网络请求加载,适用于ios7及之后版本
+bannerView 封装, 可加载网络图片和本地图片, 加载网络图片采用NSURLSession进行网络请求加载, 适用于ios7及之后版本.
 
 示例代码:
 
