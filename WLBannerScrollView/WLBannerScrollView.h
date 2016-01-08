@@ -7,11 +7,10 @@
 
 #import <UIKit/UIKit.h>
 
+typedef void(^tapBlock)(UIImage *image, NSInteger currentPage);
 typedef void(^scrollBlock)(UIImage *image, NSInteger currentPage);
 
 @interface WLBannerScrollView : UIView
-
-@property (nonatomic, strong) scrollBlock scrollBlockHandle;//滑动 scroll 时的回调
 
 @property (nonatomic, assign) BOOL showPageControl;// 是否显示 pageControl, 默认显示
 @property (nonatomic, assign) BOOL showIndicatorView;// 是否显示菊花缓冲控件 indicatorView, 默认显示
@@ -21,6 +20,12 @@ typedef void(^scrollBlock)(UIImage *image, NSInteger currentPage);
 
 //加载本地图片的初始化方法
 + (instancetype)viewWithFrame:(CGRect)frame images:(NSArray *)images;
+
+//点击图片的回调
+- (void)tapImageBlockHandle:(tapBlock)tapImageBlock;
+
+//滑动图片的回调
+- (void)scrollImageBlockHandle:(scrollBlock)scrollImageBlock;
 
 //设置当前页
 - (void)setCurrentPage:(NSInteger)currentPage animation:(BOOL)animation;

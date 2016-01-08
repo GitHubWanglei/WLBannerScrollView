@@ -20,6 +20,14 @@
 
 @property (nonatomic, strong) WLPageControl *pageControl;
 
+@property (nonatomic, assign) int lastPage;
+
+@property (nonatomic, strong) UIImage *tapImage;
+@property (nonatomic, assign) NSInteger tapPage;
+@property (nonatomic, assign) tapBlock tapImageBlock;
+
+@property (nonatomic, strong) scrollBlock scrollBlockHandle;//滑动 scroll 时的回调
+
 @end
 
 @implementation WLBannerScrollView
@@ -39,7 +47,8 @@
         if (failureImage && [failureImage isKindOfClass:[UIImage class]]) {
             self.failureImage = failureImage;
         }
-        
+        self.lastPage = -1;
+        self.tapPage = 10000;
         [self initViewWithURLStrings:urlStrings];
     }
     return self;
@@ -72,6 +81,7 @@
     self.scrollView = nil;
     self.scrollView = [self creatScrollViewWithImagesCount:urlStrings.count];
     self.scrollView.delegate = self;
+    self.scrollView.userInteractionEnabled = YES;
     [self addSubview:self.scrollView];
     
     self.showPageControl = YES;
@@ -100,6 +110,7 @@
     self.scrollView = nil;
     self.scrollView = [self creatScrollViewWithImagesCount:images.count];
     self.scrollView.delegate = self;
+    self.scrollView.userInteractionEnabled = YES;
     [self addSubview:self.scrollView];
     
     self.showPageControl = YES;
@@ -107,6 +118,7 @@
     
     for (int i = 0; i<images.count; i++) {
         [self addImageViewWithImage:images[i] page:i];
+        [self addButtonWithPage:i];
     }
     
 }
@@ -168,7 +180,7 @@
             if (!error) {
                 
 #ifdef DEBUG
-                NSLog(@"------request page %d finished", (int)page);
+                NSLog(@"------request page %d finished.", (int)page);
 #endif
                 
                 if (data.length>0) {
@@ -188,6 +200,7 @@
                         [self.images addObject:image];
                         dispatch_async(dispatch_get_main_queue(), ^{
                             [self addImageViewWithImage:image page:(int)page];
+                            [self addButtonWithPage:(int)page];
                         });
                     }
                     
@@ -226,9 +239,45 @@
     imageView.backgroundColor = [UIColor clearColor];
     if (image != nil) {
         imageView.image = image;
-        
+        imageView.tag = page;
     }
     [self.scrollView addSubview:imageView];
+}
+
+-(void)addButtonWithPage:(int)page{
+    CGFloat scrollView_W = self.bounds.size.width;
+    CGFloat scrollView_H = self.bounds.size.height;
+    CGRect BtnFrame = CGRectMake(0, 0, scrollView_W, scrollView_H);
+    UIButton *btn = [[UIButton alloc] initWithFrame:BtnFrame];
+    btn.backgroundColor = [UIColor clearColor];
+    btn.tag = page;
+    [btn addTarget:self action:@selector(clickImage:) forControlEvents:UIControlEventTouchUpInside];
+    for (UIImageView *imageView in self.scrollView.subviews) {
+        if (imageView.tag == page) {
+            [imageView addSubview:btn];
+            imageView.userInteractionEnabled = YES;
+        }
+    }
+}
+
+-(void)clickImage:(UIButton *)btn{
+    self.tapPage = (int)btn.tag;
+    self.tapImage = ((UIImageView *)btn.superview).image;
+    if (self.tapImage != nil && self.tapPage != 10000) {
+        self.tapImageBlock(_tapImage, _tapPage);
+    }
+}
+
+-(void)tapImageBlockHandle:(tapBlock)tapImageBlock{
+    if (tapImageBlock) {
+        self.tapImageBlock = tapImageBlock;
+    }
+}
+
+- (void)scrollImageBlockHandle:(scrollBlock)scrollImageBlock{
+    if (scrollImageBlock) {
+        self.scrollBlockHandle = scrollImageBlock;
+    }
 }
 
 -(void)setShowPageControl:(BOOL)showPageControl{
@@ -307,9 +356,15 @@
     
     if (self.scrollBlockHandle) {
         if (currentPage < self.images.count) {
-            self.scrollBlockHandle(self.images[currentPage], currentPage);
+            if (currentPage != self.lastPage) {
+                self.scrollBlockHandle(self.images[currentPage], currentPage);
+                self.lastPage = (int)currentPage;
+            }
         }else{
-            self.scrollBlockHandle(nil, currentPage);
+            if (currentPage != self.lastPage) {
+                self.scrollBlockHandle(nil, currentPage);
+                self.lastPage = (int)currentPage;
+            }
         }
     }
     
