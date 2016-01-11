@@ -263,7 +263,7 @@
 -(void)clickImage:(UIButton *)btn{
     self.tapPage = (int)btn.tag;
     self.tapImage = ((UIImageView *)btn.superview).image;
-    if (self.tapImage != nil && self.tapPage != 10000) {
+    if (self.tapImage != nil && self.tapPage != 10000 && self.tapImageBlock != nil) {
         self.tapImageBlock(_tapImage, _tapPage);
     }
 }
