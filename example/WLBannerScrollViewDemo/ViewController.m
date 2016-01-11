@@ -10,7 +10,7 @@
 #import "WLBannerScrollView.h"
 
 @interface ViewController ()
-
+@property (nonatomic, strong) WLBannerScrollView *banner2;
 @end
 
 @implementation ViewController
@@ -70,8 +70,11 @@
         NSLog(@"------currentPage: %ld", (long)currentPage);
     }];
     [self.view addSubview:banner2];
-    
-    
+    self.banner2 = banner2;
+}
+
+-(void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event{
+    [_banner2 setCurrentPage:1 animation:YES];
 }
 
 - (void)didReceiveMemoryWarning {
