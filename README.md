@@ -15,15 +15,9 @@ bannerView 封装, 可加载网络图片和本地图片, 加载网络图片采�
                                                       failureImage:[UIImage imageNamed:@"failureImage"]];
     //点击图片的回调
     [banner tapImageBlockHandle:^(UIImage *image, NSInteger currentPage) {
-        NSLog(@"------------image: %@", image);
         NSLog(@"------currentPage: %ld", (long)currentPage);
     }];
     
-    //滑动的回调
-    [banner scrollImageBlockHandle:^(UIImage *image, NSInteger currentPage) {
-        NSLog(@"------------image: %@", image);
-        NSLog(@"------currentPage: %ld", (long)currentPage);
-    }];
     [self.view addSubview:banner];
 
 效果图:
