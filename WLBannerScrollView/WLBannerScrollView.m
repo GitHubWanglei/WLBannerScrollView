@@ -11,6 +11,7 @@
 
 @property (nonatomic, strong) UIImage *placeholderImage;
 @property (nonatomic, strong) UIImage *failureImage;
+@property (nonatomic, assign) BOOL infiniteLoop;
 
 @property (nonatomic, strong) NSArray *URLStrings;
 @property (nonatomic, strong) UIScrollView *scrollView;
@@ -19,8 +20,6 @@
 @property (nonatomic, strong) NSMutableArray *images;
 
 @property (nonatomic, strong) WLPageControl *pageControl;
-
-@property (nonatomic, assign) int lastPage;
 
 @property (nonatomic, strong) UIImage *tapImage;
 @property (nonatomic, assign) NSInteger tapPage;
@@ -32,11 +31,24 @@
 
 @implementation WLBannerScrollView
 
-+ (instancetype)viewWithFrame:(CGRect)frame URLStrings:(NSArray *)urlStrings placeholderImage:(UIImage *)placeholderImage failureImage:(UIImage *)failureImage{
-    return [[WLBannerScrollView alloc] initWithFrame:frame URLStrings:urlStrings placeholderImage:placeholderImage failureImage:failureImage];
+#pragma mark - 网络图片初始化方法
++ (instancetype)viewWithFrame:(CGRect)frame
+                   URLStrings:(NSArray *)urlStrings
+             placeholderImage:(UIImage *)placeholderImage
+                 failureImage:(UIImage *)failureImage
+                 infiniteLoop:(BOOL)infiniteLoop{
+    return [[WLBannerScrollView alloc] initWithFrame:frame
+                                          URLStrings:urlStrings
+                                    placeholderImage:placeholderImage
+                                        failureImage:failureImage
+                                        infiniteLoop:infiniteLoop];
 }
 
-- (instancetype)initWithFrame:(CGRect)frame URLStrings:(NSArray *)urlStrings placeholderImage:(UIImage *)placeholderImage failureImage:(UIImage *)failureImage
+- (instancetype)initWithFrame:(CGRect)frame
+                   URLStrings:(NSArray *)urlStrings
+             placeholderImage:(UIImage *)placeholderImage
+                 failureImage:(UIImage *)failureImage
+                 infiniteLoop:(BOOL)infiniteLoop
 {
     self = [super initWithFrame:frame];
     if (self) {
@@ -47,26 +59,30 @@
         if (failureImage && [failureImage isKindOfClass:[UIImage class]]) {
             self.failureImage = failureImage;
         }
-        self.lastPage = -1;
+        
         self.tapPage = 10000;
+        self.infiniteLoop = infiniteLoop;
         [self initViewWithURLStrings:urlStrings];
     }
     return self;
 }
 
-+ (instancetype)viewWithFrame:(CGRect)frame images:(NSArray *)images{
-    return [[WLBannerScrollView alloc] initWithFrame:frame images:images];
+#pragma mark - 本地图片初始化方法
++ (instancetype)viewWithFrame:(CGRect)frame images:(NSArray *)images infiniteLoop:(BOOL)infiniteLoop{
+    return [[WLBannerScrollView alloc] initWithFrame:frame images:images infiniteLoop:(BOOL)infiniteLoop];
 }
 
-- (instancetype)initWithFrame:(CGRect)frame images:(NSArray *)images
+- (instancetype)initWithFrame:(CGRect)frame images:(NSArray *)images infiniteLoop:(BOOL)infiniteLoop
 {
     self = [super initWithFrame:frame];
     if (self) {
+        self.infiniteLoop = infiniteLoop;
         [self initViewWithImages:images];
     }
     return self;
 }
 
+#pragma mark - 通过 urlString 创建 view
 -(void)initViewWithURLStrings:(NSArray *)urlStrings{
     if (urlStrings.count == 0) {
         return;
@@ -95,6 +111,7 @@
     
 }
 
+#pragma mark - 通过本地图片创建 view
 -(void)initViewWithImages:(NSArray *)images{
     if (images.count == 0) {
         return;
@@ -123,14 +140,15 @@
     
 }
 
+#pragma mark - 创建 scrollView
 -(UIScrollView *)creatScrollViewWithImagesCount:(NSInteger)count{
     
     CGFloat scrollView_W = self.bounds.size.width;
     CGFloat scrollView_H = self.bounds.size.height;
-    NSInteger urlCount = count;
+    NSInteger imagesCount = self.infiniteLoop ? count+2 : count;
     
     UIScrollView *scrollView = [[UIScrollView alloc] initWithFrame:self.bounds];
-    scrollView.contentSize = CGSizeMake(scrollView_W*urlCount, scrollView_H);
+    scrollView.contentSize = CGSizeMake(scrollView_W*imagesCount, scrollView_H);
     scrollView.pagingEnabled = YES;
     scrollView.showsHorizontalScrollIndicator = NO;
     scrollView.showsVerticalScrollIndicator = NO;
@@ -139,11 +157,17 @@
     scrollView.alwaysBounceHorizontal = YES;
     scrollView.backgroundColor = [UIColor blackColor];
     
+    if (self.infiniteLoop == YES) {
+        scrollView.contentOffset = CGPointMake(scrollView_W, 0);
+    }
+    
     return scrollView;
 }
 
+#pragma mark - 请求网络图片
 -(void)requestImages{
     
+    // 添加缓冲控件
     for (int i = 0; i<self.URLStrings.count; i++) {
         UIImageView *imageView = self.scrollView.subviews[i];
         UIActivityIndicatorView *indicatorView = [[UIActivityIndicatorView alloc] init];
@@ -186,7 +210,7 @@
                 if (data.length>0) {
                     __block UIImage *image = [UIImage imageWithData:data];
                     
-                    if (image == nil) {
+                    if (image == nil) {//请求失败
                         if (self.failureImage != nil) {
                             dispatch_async(dispatch_get_main_queue(), ^{
                                 [self addImageViewWithImage:self.failureImage page:(int)page];
@@ -196,7 +220,7 @@
                                 [self addImageViewWithImage:self.placeholderImage page:(int)page];
                             });
                         }
-                    }else{
+                    }else{//请求成功
                         [self.images addObject:image];
                         dispatch_async(dispatch_get_main_queue(), ^{
                             [self addImageViewWithImage:image page:(int)page];
@@ -230,18 +254,73 @@
     
 }
 
+#pragma mark - 在 scrollView 中添加图片
 -(void)addImageViewWithImage:(UIImage *)image page:(int)page{
     
     CGFloat scrollView_W = self.bounds.size.width;
     CGFloat scrollView_H = self.bounds.size.height;
-    CGRect imageViewFrame = CGRectMake(scrollView_W*page, 0, scrollView_W, scrollView_H);
-    UIImageView *imageView = [[UIImageView alloc] initWithFrame:imageViewFrame];
-    imageView.backgroundColor = [UIColor clearColor];
-    if (image != nil) {
-        imageView.image = image;
-        imageView.tag = page;
+    
+    if (self.infiniteLoop == NO) {
+        CGRect imageViewFrame = CGRectMake(scrollView_W*page, 0, scrollView_W, scrollView_H);
+        UIImageView *imageView = [[UIImageView alloc] initWithFrame:imageViewFrame];
+        imageView.backgroundColor = [UIColor clearColor];
+        if (image != nil) {
+            imageView.image = image;
+            imageView.tag = page;
+        }
+        [self.scrollView addSubview:imageView];
+    }else{
+        
+        NSInteger imagesCount = self.URLStrings.count ? self.URLStrings.count : self.images.count;
+        
+        if (page == 0) {
+            //最后一张
+            CGRect imageViewFrame = CGRectMake(scrollView_W*(imagesCount+1), 0, scrollView_W, scrollView_H);
+            UIImageView *imageView = [[UIImageView alloc] initWithFrame:imageViewFrame];
+            imageView.backgroundColor = [UIColor clearColor];
+            //第二张
+            CGRect imageViewFrame2 = CGRectMake(scrollView_W*(page+1), 0, scrollView_W, scrollView_H);
+            UIImageView *imageView2 = [[UIImageView alloc] initWithFrame:imageViewFrame2];
+            imageView2.backgroundColor = [UIColor clearColor];
+            if (image != nil) {
+                imageView.image = image;
+                imageView.tag = page;
+                imageView2.image = image;
+                imageView2.tag = page;
+            }
+            [self.scrollView addSubview:imageView];
+            [self.scrollView addSubview:imageView2];
+        }else if (page == imagesCount-1) {
+            //第一张
+            CGRect imageViewFrame = CGRectMake(scrollView_W*0, 0, scrollView_W, scrollView_H);
+            UIImageView *imageView = [[UIImageView alloc] initWithFrame:imageViewFrame];
+            imageView.backgroundColor = [UIColor clearColor];
+            //倒数第二张
+            CGRect imageViewFrame2 = CGRectMake(scrollView_W*imagesCount, 0, scrollView_W, scrollView_H);
+            UIImageView *imageView2 = [[UIImageView alloc] initWithFrame:imageViewFrame2];
+            imageView2.backgroundColor = [UIColor clearColor];
+            if (image != nil) {
+                imageView.image = image;
+                imageView.tag = page;
+                imageView2.image = image;
+                imageView2.tag = page;
+            }
+            [self.scrollView addSubview:imageView];
+            [self.scrollView addSubview:imageView2];
+        }else{
+            
+            CGRect imageViewFrame = CGRectMake(scrollView_W*(page+1), 0, scrollView_W, scrollView_H);
+            UIImageView *imageView = [[UIImageView alloc] initWithFrame:imageViewFrame];
+            imageView.backgroundColor = [UIColor clearColor];
+            if (image != nil) {
+                imageView.image = image;
+                imageView.tag = page;
+            }
+            [self.scrollView addSubview:imageView];
+        }
+        
     }
-    [self.scrollView addSubview:imageView];
+    
 }
 
 -(void)addButtonWithPage:(int)page{
@@ -271,12 +350,6 @@
 -(void)tapImageBlockHandle:(tapBlock)tapImageBlock{
     if (tapImageBlock) {
         self.tapImageBlock = tapImageBlock;
-    }
-}
-
-- (void)scrollImageBlockHandle:(scrollBlock)scrollImageBlock{
-    if (scrollImageBlock) {
-        self.scrollBlockHandle = scrollImageBlock;
     }
 }
 
@@ -326,18 +399,17 @@
 -(void)setCurrentPage:(NSInteger)currentPage animation:(BOOL)animation{
     
     if (self.pageControl != nil) {
-
-            CGFloat scrollView_W = self.scrollView.bounds.size.width;
-            
-            if (self.scrollView != nil && animation == YES) {
-                [self.scrollView setContentOffset:CGPointMake(currentPage*scrollView_W, 0) animated:YES];
-                self.pageControl.currentPage = currentPage;
+        CGFloat scrollView_W = self.scrollView.bounds.size.width;
+        if (self.infiniteLoop == YES) {
+            if (currentPage == 0) {
+                [self.scrollView setContentOffset:CGPointMake(1*scrollView_W, 0) animated:animation];
+            }else{
+                [self.scrollView setContentOffset:CGPointMake((currentPage+1)*scrollView_W, 0) animated:animation];
             }
-            if (self.scrollView != nil && animation == NO) {
-                [self.scrollView setContentOffset:CGPointMake(currentPage*scrollView_W, 0) animated:NO];
-                self.pageControl.currentPage = currentPage;
-            }
-
+        }else{
+            [self.scrollView setContentOffset:CGPointMake(currentPage*scrollView_W, 0) animated:animation];
+        }
+        
     }
     
 }
@@ -354,21 +426,46 @@
     CGPoint contentOffset = scrollView.contentOffset;
     NSInteger currentPage = contentOffset.x/scrollView.bounds.size.width;
     
-    if (self.scrollBlockHandle) {
-        if (currentPage < self.images.count) {
-            if (currentPage != self.lastPage) {
-                self.scrollBlockHandle(self.images[currentPage], currentPage);
-                self.lastPage = (int)currentPage;
-            }
+    if (self.infiniteLoop == YES) {
+        
+        NSLog(@"-----%ld", currentPage);
+
+        NSInteger imagesCount = self.URLStrings.count ? self.URLStrings.count : self.images.count;
+        
+        if (currentPage == 0) {
+            self.pageControl.currentPage = imagesCount;
+        }else if (currentPage == imagesCount+1) {
+            self.pageControl.currentPage = 0;
         }else{
-            if (currentPage != self.lastPage) {
-                self.scrollBlockHandle(nil, currentPage);
-                self.lastPage = (int)currentPage;
-            }
+            self.pageControl.currentPage = currentPage-1;
         }
+        
+    }else{
+        self.pageControl.currentPage = currentPage;
+    }
+}
+
+-(void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView{
+    
+    CGPoint contentOffset = scrollView.contentOffset;
+    NSInteger currentPage = contentOffset.x/scrollView.bounds.size.width;
+    
+    if (self.infiniteLoop == YES) {
+        
+        NSInteger imagesCount = self.URLStrings.count ? self.URLStrings.count : self.images.count;
+        
+        if (currentPage == 0) {
+            CGFloat scrollView_W = self.scrollView.bounds.size.width;
+            [self.scrollView setContentOffset:CGPointMake(imagesCount*scrollView_W, 0) animated:NO];
+        }
+        
+        if (currentPage == imagesCount+1) {
+            CGFloat scrollView_W = self.scrollView.bounds.size.width;
+            [self.scrollView setContentOffset:CGPointMake(1*scrollView_W, 0) animated:NO];
+        }
+        
     }
     
-    self.pageControl.currentPage = currentPage;
 }
 
 @end

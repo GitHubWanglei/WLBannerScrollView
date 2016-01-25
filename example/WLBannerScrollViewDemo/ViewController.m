@@ -32,18 +32,13 @@
     WLBannerScrollView *banner = [WLBannerScrollView viewWithFrame:banner_frame
                                                         URLStrings:urlStrings
                                                   placeholderImage:[UIImage imageNamed:@"placeholderImage.jpg"]
-                                                      failureImage:[UIImage imageNamed:@"failureImage"]];
+                                                      failureImage:[UIImage imageNamed:@"failureImage.png"]
+                                                      infiniteLoop:YES];
     //点击图片的回调
     [banner tapImageBlockHandle:^(UIImage *image, NSInteger currentPage) {
-        NSLog(@"------------image: %@", image);
         NSLog(@"------currentPage: %ld", (long)currentPage);
     }];
-    
-    //滑动的回调
-    [banner scrollImageBlockHandle:^(UIImage *image, NSInteger currentPage) {
-        NSLog(@"------------image: %@", image);
-        NSLog(@"------currentPage: %ld", (long)currentPage);
-    }];
+
     [self.view addSubview:banner];
     
     //****************************** 本地图片 **************************************************
@@ -56,19 +51,13 @@
         [images addObject:image];
     }
     //加载本地图片
-    WLBannerScrollView *banner2 = [WLBannerScrollView viewWithFrame:banner_frame2 images:images];
-    
+    WLBannerScrollView *banner2 = [WLBannerScrollView viewWithFrame:banner_frame2 images:images infiniteLoop:NO];
+    [banner2 setCurrentPage:1 animation:NO];
     //点击图片的回调
     [banner2 tapImageBlockHandle:^(UIImage *image, NSInteger currentPage) {
-        NSLog(@"------------image: %@", image);
         NSLog(@"------currentPage: %ld", (long)currentPage);
     }];
     
-    //滑动的回调
-    [banner2 scrollImageBlockHandle:^(UIImage *image, NSInteger currentPage) {
-        NSLog(@"------------image: %@", image);
-        NSLog(@"------currentPage: %ld", (long)currentPage);
-    }];
     [self.view addSubview:banner2];
     self.banner2 = banner2;
 }
