@@ -440,20 +440,7 @@
             self.pageControl.currentPage = currentPage-1;
         }
         
-    }else{
-        self.pageControl.currentPage = currentPage;
-    }
-}
-
--(void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView{
-    
-    CGPoint contentOffset = scrollView.contentOffset;
-    NSInteger currentPage = contentOffset.x/scrollView.bounds.size.width;
-    
-    if (self.infiniteLoop == YES) {
-        
-        NSInteger imagesCount = self.URLStrings.count ? self.URLStrings.count : self.images.count;
-        
+        //切换图片
         if (currentPage == 0) {
             CGFloat scrollView_W = self.scrollView.bounds.size.width;
             [self.scrollView setContentOffset:CGPointMake(imagesCount*scrollView_W, 0) animated:NO];
@@ -464,9 +451,34 @@
             [self.scrollView setContentOffset:CGPointMake(1*scrollView_W, 0) animated:NO];
         }
         
+    }else{
+        self.pageControl.currentPage = currentPage;
     }
-    
 }
+
+//快速连续滑动时, 停留时间非常短, 切换时会卡顿, 不适用
+//-(void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView{
+//    
+//    CGPoint contentOffset = scrollView.contentOffset;
+//    NSInteger currentPage = contentOffset.x/scrollView.bounds.size.width;
+//    
+//    if (self.infiniteLoop == YES) {
+//        
+//        NSInteger imagesCount = self.URLStrings.count ? self.URLStrings.count : self.images.count;
+//        
+//        if (currentPage == 0) {
+//            CGFloat scrollView_W = self.scrollView.bounds.size.width;
+//            [self.scrollView setContentOffset:CGPointMake(imagesCount*scrollView_W, 0) animated:NO];
+//        }
+//        
+//        if (currentPage == imagesCount+1) {
+//            CGFloat scrollView_W = self.scrollView.bounds.size.width;
+//            [self.scrollView setContentOffset:CGPointMake(1*scrollView_W, 0) animated:NO];
+//        }
+//        
+//    }
+//    
+//}
 
 @end
 

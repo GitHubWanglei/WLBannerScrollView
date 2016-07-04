@@ -51,7 +51,7 @@
         [images addObject:image];
     }
     //加载本地图片
-    WLBannerScrollView *banner2 = [WLBannerScrollView viewWithFrame:banner_frame2 images:images infiniteLoop:NO];
+    WLBannerScrollView *banner2 = [WLBannerScrollView viewWithFrame:banner_frame2 images:images infiniteLoop:YES];
     [banner2 setCurrentPage:1 animation:NO];
     //点击图片的回调
     [banner2 tapImageBlockHandle:^(UIImage *image, NSInteger currentPage) {
